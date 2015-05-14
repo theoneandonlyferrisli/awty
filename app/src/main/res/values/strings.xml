@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">AreWeThereYet</string>
 
-    <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="title">Are We There Yet</string>
+    <string name="desc">"Let me help you ruin someone else's day."</string>
+    <string name="subtitle_1">"Please type in the victim's phone number in the following textbox!"</string>
+    <string name="subtitle_2">Please type in the message you want sent to the victim in the following textbox!</string>
 </resources>
