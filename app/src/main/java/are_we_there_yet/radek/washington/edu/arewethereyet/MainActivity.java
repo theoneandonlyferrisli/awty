@@ -2,12 +2,16 @@ package are_we_there_yet.radek.washington.edu.arewethereyet;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.telephony.SmsManager;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -22,6 +26,27 @@ import java.util.regex.Pattern;
 public class MainActivity extends ActionBarActivity {
     private PendingIntent pendingIntent;
 
+    BroadcastReceiver alarmReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent != null) {
+
+                String phoneNumber = intent.getStringExtra("phoneNumber");
+                String message = intent.getStringExtra("message");
+
+                try {
+                    SmsManager smsManager = SmsManager.getDefault();
+                    smsManager.sendTextMessage(phoneNumber, null, message, null, null);
+                    Log.i("onReceive", "fired");
+                    Toast.makeText(context, "SMS sent!", Toast.LENGTH_LONG).show();
+                } catch (Exception e) {
+                    Toast.makeText(context, "SMS failed!", Toast.LENGTH_LONG).show();
+                    e.printStackTrace();
+                }
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -35,6 +60,7 @@ public class MainActivity extends ActionBarActivity {
 
         // Set up alarm manager.
         final AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        registerReceiver(alarmReceiver, new IntentFilter("start_the_alarm"));
 
         start.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -51,10 +77,11 @@ public class MainActivity extends ActionBarActivity {
                     manager.cancel(pendingIntent);
                     Toast.makeText(MainActivity.this, "Thanks for you mercy!", Toast.LENGTH_LONG).show();
                     start.setText("Start");
-                } else if (!phoneNumber.equals("") && !message.equals("") &&
+                } else if (!phoneNumber.isEmpty() && !message.isEmpty()
+                        /*!phoneNumber.equals("") && !message.equals("") &&
                         !duration.equals("") &&
                         phoneNumberValidator.matcher(phoneNumber).matches() &&
-                        durationValidator.matcher(duration).matches()) {
+                        durationValidator.matcher(duration).matches()*/) {
                     start.setText("Stop");
 
                     // Get the time interval from user input.
@@ -62,15 +89,17 @@ public class MainActivity extends ActionBarActivity {
                             toMillis(Integer.parseInt(durationBox.getText().toString()));
 
                     // Put the message to be displayed in the intent.
-                    Intent alarmStart = new Intent(MainActivity.this, Receiver.class);
+                    Intent alarmStart = new Intent();
+                    alarmStart.setAction("start_the_alarm");
 
                     // Start the alarm.
-                    alarmStart.putExtra("message", "(" + phoneNumber.substring(0, 3) + ")"
-                            + phoneNumber.substring(3, 6) + "-" + phoneNumber.substring(6)
-                            + ": Are we there yet?");
+                    alarmStart.putExtra("phoneNumber", /*"(" + phoneNumber.substring(0, 3) + ")"
+                            + phoneNumber.substring(3, 6) + "-" + phoneNumber.substring(6)*/
+                            phoneNumber);
+                    alarmStart.putExtra("message", message);
                     pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0,
                             alarmStart, 0);
-                    manager.setInexactRepeating(AlarmManager.RTC_WAKEUP,
+                    manager.setRepeating(AlarmManager.RTC_WAKEUP,
                             System.currentTimeMillis(), interval, pendingIntent);
 
                     //Display a toast message that signifies the onset of an alarm.
